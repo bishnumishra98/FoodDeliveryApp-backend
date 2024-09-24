@@ -1,16 +1,17 @@
 const mongoose = require("mongoose");
-var mongoURL = "mongodb+srv://bishnumishra1109:ShreeRam@123@cluster0.vtyquxg.mongodb.net/food-delivery-app";
 
-mongoose.connect(mongoURL, {useUnifiedTopoly: true, useNewUrlParser: true})
+const mongoURL = "mongodb+srv://food-sharing-app:vsL1p4S0ByBW6iVh@cluster0.vtyquxg.mongodb.net/"
 
-var db = mongoose.connection
+mongoose.connect(mongoURL);
 
-db.on('connection', () => {
-    console.log(`MongoDB connection successfull`);
-})
+const db = mongoose.connection;
 
-db.on('error', () => {
-    console.log(`MongoDB connection failed`);
-})
+db.once("open", () => {
+    console.log("Connected to MongoDB");
+});
+
+db.on("error", (error) => {
+    console.log("Failed to establish connection with MongoDB: ", error);
+});
 
 module.exports = mongoose
