@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const pizzaSchema = new mongoose.Schema({
     name: { type: String, required: true },
-    varients: [{ type: String }],
+    variants: [{ type: String }],
     prices: [{ type: Number }],
     category: { type: String, required: true },
     image: { type: String, required: true },
@@ -11,6 +11,6 @@ const pizzaSchema = new mongoose.Schema({
     timestamps: true,  // Adds createdAt and updatedAt fields automatically
 });
 
-const pizzaModel = mongoose.model('pizzas', pizzaSchema);
+const pizzaModel = mongoose.model('pizza', pizzaSchema);
 
 module.exports = pizzaModel;
