@@ -1,15 +1,15 @@
 const mongoose = require("mongoose");
 
-const pizzaSchema = mongoose.Schema({
-    name: {type: String, require},
-    varients: [],
-    prices: [],
-    category: {type: String, require},
-    image: {type: String, require},
-    description: {Type: String, require}
+const pizzaSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    varients: [{ type: String }],
+    prices: [{ type: Number }],
+    category: { type: String, required: true },
+    image: { type: String, required: true },
+    description: { type: String, required: true }
 }, {
-    timestamp: true,
-})
+    timestamps: true,  // Adds createdAt and updatedAt fields automatically
+});
 
 const pizzaModel = mongoose.model('pizzas', pizzaSchema);
 
