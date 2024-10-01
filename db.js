@@ -1,7 +1,5 @@
 const mongoose = require("mongoose");
 
-// const mongoURL = "mongodb+srv://food-sharing-app:vsL1p4S0ByBW6iVh@cluster0.vtyquxg.mongodb.net/"
-
 const mongoURL = "mongodb+srv://food-delivery-app:d6LgjPI5453c6a5b@cluster0.vtyquxg.mongodb.net/food-delivery-app"
 
 mongoose.connect(mongoURL);
