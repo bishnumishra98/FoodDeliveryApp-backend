@@ -14,7 +14,7 @@ app.use(cors({
 }));
 
 const pizzasRoute = require('./routes/pizzaRoute');
-app.use('./api/pizzas/', pizzasRoute);
+app.use('/api/pizzas/', pizzasRoute);
 
 app.get("/", (req, res) => {
     res.send("Server working at port: " + port);
