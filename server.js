@@ -1,34 +1,36 @@
 const express = require("express");
-const Pizza  = require('./models/pizzaModel');
+const Food = require("./models/foodModel");
 const db = require("./db");
-const cors = require('cors');
+const cors = require("cors");
 
 const app = express();
 
 app.use(express.json());
 
-app.use(cors({
-    origin: 'http://localhost:3000',   // allow requests from the React app
-    credentials: true   // if you want to allow cookies or credentials
-}));
+app.use(
+  cors({
+    origin: "http://localhost:3000", // allow requests from the React app
+    credentials: true, // if you want to allow cookies or credentials
+  })
+);
 
-const pizzasRoute = require('./routes/pizzaRoute');
-const userRoute = require('./routes/userRoute');
+const foodsRoute = require("./routes/foodRoute");
+const userRoute = require("./routes/userRoute");
 
-app.use('/api/pizzas/', pizzasRoute);
-app.use('/api/users/', userRoute);
+app.use("/api/foods/", foodsRoute);
+app.use("/api/users/", userRoute);
 
 app.get("/", (req, res) => {
-    res.send("Server working at port: " + port);
+  res.send("Server working at port: " + port);
 });
 
-// app.get("/getpizzas", async (req, res) => {
+// app.get("/getfoods", async (req, res) => {
 //     try {
-//         const pizzas = await Pizza.find({});
-//         res.send(pizzas);
+//         const foods = await Food.find({});
+//         res.send(foods);
 //     } catch (err) {
 //         console.log(err);
-//         res.status(500).send("Error retrieving pizzas");
+//         res.status(500).send("Error retrieving foods");
 //     }
 // });
 
