@@ -8,10 +8,10 @@ const app = express();
 app.use(express.json());
 
 app.use(
-  cors({
-    origin: "http://localhost:3000", // allow requests from the React app
-    credentials: true, // if you want to allow cookies or credentials
-  })
+	cors({
+		origin: "http://localhost:3000", // allow requests from the React app
+		credentials: true, // if you want to allow cookies or credentials
+	})
 );
 
 const foodsRoute = require("./routes/foodRoute");
@@ -21,7 +21,7 @@ app.use("/api/foods/", foodsRoute);
 app.use("/api/users/", userRoute);
 
 app.get("/", (req, res) => {
-  res.send("Server working at port: " + port);
+  	res.send("Server working at port: " + port);
 });
 
 // app.get("/getfoods", async (req, res) => {
