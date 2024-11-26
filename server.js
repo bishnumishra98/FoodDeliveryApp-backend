@@ -24,16 +24,6 @@ app.get("/", (req, res) => {
   	res.send("Server working at port: " + port);
 });
 
-// app.get("/getfoods", async (req, res) => {
-//     try {
-//         const foods = await Food.find({});
-//         res.send(foods);
-//     } catch (err) {
-//         console.log(err);
-//         res.status(500).send("Error retrieving foods");
-//     }
-// });
-
 const port = process.env.PORT || 8000;
 
 app.listen(port, () => `Server running`);
