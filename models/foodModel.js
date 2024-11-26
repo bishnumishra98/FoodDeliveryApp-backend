@@ -8,7 +8,7 @@ const foodSchema = new mongoose.Schema({
 		image: { type: String, required: true },
 		description: { type: String, required: true },
 	}, {
-		timestamps: true, // Adds createdAt and updatedAt fields automatically
+		timestamps: true,   // adds createdAt and updatedAt fields automatically
 	}
 );
 
