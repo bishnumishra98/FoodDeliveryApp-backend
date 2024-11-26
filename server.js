@@ -9,8 +9,8 @@ app.use(express.json());
 
 app.use(
 	cors({
-		origin: "http://localhost:3000", // allow requests from the React app
-		credentials: true, // if you want to allow cookies or credentials
+		origin: "http://localhost:3000",   // allow requests from the React app
+		credentials: true,   // if you want to allow cookies or credentials
 	})
 );
 
