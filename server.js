@@ -18,10 +18,12 @@ app.use(
 // Import route handlers
 const foodsRoute = require("./routes/foodRoute");   // handles routes for food-related endpoints
 const userRoute = require("./routes/userRoute");   // handles routes for user-related endpoints
+const cartRoute = require('./routes/cartRoute');   // handles routes for cart-related endpoints
 
 // Define API routes
 app.use("/api/foods/", foodsRoute);   // prefix for all food-related routes
 app.use("/api/users/", userRoute);   // prefix for all user-related routes
+app.use('/api/carts/', cartRoute);   // prefix for all cart-related routes
 
 // Root route for basic server response
 app.get("/", (req, res) => {
