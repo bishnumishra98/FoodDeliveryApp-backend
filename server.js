@@ -3,10 +3,11 @@ const Food = require("./models/foodModel");
 const db = require("./db");
 const cors = require("cors");
 
-const app = express();
+const app = express();   // initialize the Express application
 
-app.use(express.json());
+app.use(express.json());   // middleware to parse incoming JSON requests
 
+// Configure CORS to allow requests from the React frontend
 app.use(
 	cors({
 		origin: "http://localhost:3000",   // allow requests from the React app
@@ -14,16 +15,21 @@ app.use(
 	})
 );
 
-const foodsRoute = require("./routes/foodRoute");
-const userRoute = require("./routes/userRoute");
+// Import route handlers
+const foodsRoute = require("./routes/foodRoute");   // handles routes for food-related endpoints
+const userRoute = require("./routes/userRoute");   // handles routes for user-related endpoints
 
-app.use("/api/foods/", foodsRoute);
-app.use("/api/users/", userRoute);
+// Define API routes
+app.use("/api/foods/", foodsRoute);   // prefix for all food-related routes
+app.use("/api/users/", userRoute);   // prefix for all user-related routes
 
+// Root route for basic server response
 app.get("/", (req, res) => {
   	res.send("Server working at port: " + port);
 });
 
-const port = process.env.PORT || 8000;
+// Define the port for the server to listen on
+const port = process.env.PORT || 8000;   // use environment variable or default to 8000
 
-app.listen(port, () => `Server running`);
+// Start the server and listen for incoming requests
+app.listen(port, () => `Server running`);   // log confirmation when the server starts
