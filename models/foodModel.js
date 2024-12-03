@@ -12,6 +12,6 @@ const foodSchema = new mongoose.Schema({
 	}
 );
 
-const foodModel = mongoose.model("food", foodSchema);   // "Food" is the collection name
+const foodModel = mongoose.model("food", foodSchema);   // "food" is the collection name
 
 module.exports = foodModel;
