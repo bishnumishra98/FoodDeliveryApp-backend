@@ -1,16 +1,17 @@
 const express = require("express");
-const Food = require("./models/foodModel");
-const db = require("./db");
-const cors = require("cors");
-
 const app = express();   // initialize the Express application
+// const Food = require("./models/foodModel");
+const connectDB = require("./db");
+connectDB();
+
+const cors = require("cors");
 
 app.use(express.json());   // middleware to parse incoming JSON requests
 
 // Configure CORS to allow requests from the React frontend
 app.use(
 	cors({
-		origin: "http://localhost:3000",   // allow requests from the React app
+		origin: "*",   // allow requests from all clients
 		credentials: true,   // if you want to allow cookies or credentials
 	})
 );

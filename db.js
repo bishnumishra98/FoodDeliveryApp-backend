@@ -1,17 +1,20 @@
+require("dotenv").config();
 const mongoose = require("mongoose");
 
-const mongoURL = "mongodb+srv://food-delivery-app:d6LgjPI5453c6a5b@cluster0.vtyquxg.mongodb.net/food-delivery-app"
+function connectDB() {
+    // connect the application with mongoDB
+    mongoose.connect(process.env.MONGO_CONNECTION_URL);
 
-mongoose.connect(mongoURL);
+    // start the connection by accessing the connection object (mongoose.connection)
+    const connection = mongoose.connection;
 
-const db = mongoose.connection;
+    connection.once("open", () => {
+        console.log("Connected to MongoDB");
+    });
 
-db.once("open", () => {
-    console.log("Connected to MongoDB");
-});
+    connection.on("error", (err) => {
+        console.log("Failed to establish connection with MongoDB", err);
+    });
+}
 
-db.on("error", (error) => {
-    console.log("Failed to establish connection with MongoDB: ", error);
-});
-
-module.exports = mongoose
+module.exports = connectDB;
