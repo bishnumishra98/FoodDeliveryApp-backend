@@ -7,7 +7,7 @@ const Order = require("../models/orderModel");
 // Load environment variables
 const PHONEPE_MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID;
 const PHONEPE_SECRET_KEY = process.env.PHONEPE_SECRET_KEY;
-const PHONEPE_BASE_URL = "https://api-preprod.phonepe.com/apis/pg-sandbox";
+const PHONEPE_BASE_URL = process.env.PHONEPE_BASE_URL;
 
 // Place order and initiate payment
 router.post("/placeorder", async (req, res) => {
