@@ -19,12 +19,12 @@ app.use(
 // Import route handlers
 const foodsRoute = require("./routes/foodRoute");   // handles routes for food-related endpoints
 const userRoute = require("./routes/userRoute");   // handles routes for user-related endpoints
-// const orderRoute = request('./routes/orderRoute');   // handles routes for order-related endpoints
+const orderRoute = require('./routes/orderRoute');   // handles routes for order-related endpoints
 
 // Define API routes
 app.use("/api/foods/", foodsRoute);   // prefix for all food-related routes
 app.use("/api/users/", userRoute);   // prefix for all user-related routes
-// app.use("/api/orders/", orderRoute);   // prefix for all order-related routes
+app.use("/api/orders/", orderRoute);   // prefix for all order-related routes
 
 // Root route for basic server response
 app.get("/", (req, res) => {
