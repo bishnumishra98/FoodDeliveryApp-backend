@@ -6,12 +6,16 @@ const Order = require("../models/orderModel");
 
 // Load environment variables
 const PHONEPE_MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID;
-const PHONEPE_SECRET_KEY = process.env.PHONEPE_SECRET_KEY;
+const PHONEPE_SALT_KEY = process.env.PHONEPE_SALT_KEY;
 const PHONEPE_BASE_URL = process.env.PHONEPE_BASE_URL;
 
 // Place order and initiate payment
 router.post("/placeorder", async (req, res) => {
-    const { subtotal, currentUser, cartItems, deliveryAddress } = req.body;
+    const { currentUser, cartItems, subtotal, deliveryAddress } = req.body;
+    console.log(currentUser);
+    console.log(cartItems);
+    console.log(subtotal);
+    console.log(deliveryAddress);
 
     try {
         const orderId = `ORD_${Date.now()}`; // Generate a unique transaction ID
@@ -27,7 +31,7 @@ router.post("/placeorder", async (req, res) => {
         };
 
         const encodedPayload = Buffer.from(JSON.stringify(payload)).toString("base64");
-        const checksum = crypto.createHmac("sha256", PHONEPE_SECRET_KEY).update(encodedPayload).digest("base64");
+        const checksum = crypto.createHmac("sha256", PHONEPE_SALT_KEY).update(encodedPayload).digest("base64");
 
         // Initiate payment request to PhonePe
         const response = await axios.post(`${PHONEPE_BASE_URL}/pg/v1/pay`, encodedPayload, {
@@ -47,10 +51,10 @@ router.post("/placeorder", async (req, res) => {
                 deliveryAddress,
                 orderAmount: subtotal,
                 transactionId: orderId,
-            });
+        });
 
-            await newOrder.save();
-            res.send({ paymentUrl: response.data.data.paymentUrl }); // Return payment URL to frontend
+        await newOrder.save();
+        res.send({ paymentUrl: response.data.data.paymentUrl }); // Return payment URL to frontend
         } else {
             res.status(400).json({ message: "Payment initiation failed" });
         }
