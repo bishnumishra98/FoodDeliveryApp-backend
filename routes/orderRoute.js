@@ -11,7 +11,7 @@ const PHONEPE_BASE_URL = process.env.PHONEPE_BASE_URL;
 
 // Place order and initiate payment
 router.post("/placeorder", async (req, res) => {
-    const { subtotal, currentUser, cartItems, shippingAddress } = req.body;
+    const { subtotal, currentUser, cartItems, deliveryAddress } = req.body;
 
     try {
         const orderId = `ORD_${Date.now()}`; // Generate a unique transaction ID
@@ -27,10 +27,7 @@ router.post("/placeorder", async (req, res) => {
         };
 
         const encodedPayload = Buffer.from(JSON.stringify(payload)).toString("base64");
-        const checksum = crypto
-            .createHmac("sha256", PHONEPE_SECRET_KEY)
-            .update(encodedPayload)
-            .digest("base64");
+        const checksum = crypto.createHmac("sha256", PHONEPE_SECRET_KEY).update(encodedPayload).digest("base64");
 
         // Initiate payment request to PhonePe
         const response = await axios.post(`${PHONEPE_BASE_URL}/pg/v1/pay`, encodedPayload, {
@@ -41,21 +38,21 @@ router.post("/placeorder", async (req, res) => {
         });
 
         if (response.data.success) {
-            // Save the order to the database
-            const newOrder = new Order({
-                name: currentUser.name,
-                email: currentUser.email,
-                userid: currentUser._id,
-                orderItems: cartItems,
-                shippingAddress,
-                orderAmount: subtotal,
-                transactionId: orderId,
-            });
+        // Save the order to the database
+        const newOrder = new Order({
+            name: currentUser.name,
+            email: currentUser.email,
+            userid: currentUser._id,
+            orderItems: cartItems,
+            deliveryAddress,
+            orderAmount: subtotal,
+            transactionId: orderId,
+        });
 
-            await newOrder.save();
-            res.send({ paymentUrl: response.data.data.paymentUrl }); // Return payment URL to frontend
+        await newOrder.save();
+        res.send({ paymentUrl: response.data.data.paymentUrl }); // Return payment URL to frontend
         } else {
-            res.status(400).json({ message: "Payment initiation failed" });
+        res.status(400).json({ message: "Payment initiation failed" });
         }
     } catch (error) {
         res.status(400).json({ message: `Error: ${error.message}` });
@@ -98,7 +95,7 @@ router.post("/deliverorder", async (req, res) => {
     try {
         const order = await Order.findOne({ _id: orderid });
         if (!order) {
-            return res.status(404).json({ message: "Order not found" });
+        return res.status(404).json({ message: "Order not found" });
         }
         order.isDelivered = true;
         await order.save();
