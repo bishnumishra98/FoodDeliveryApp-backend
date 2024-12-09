@@ -7,7 +7,7 @@ const Order = require("../models/orderModel");
 // Load environment variables
 const PHONEPE_MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID;
 const PHONEPE_SALT_KEY = process.env.PHONEPE_SALT_KEY;
-const PHONEPE_BASE_URL = process.env.PHONEPE_BASE_URL;
+const PHONEPE_TEST_URL = process.env.PHONEPE_TEST_URL;
 
 // Place order and initiate payment
 router.post("/placeorder", async (req, res) => {
@@ -18,27 +18,38 @@ router.post("/placeorder", async (req, res) => {
     console.log(deliveryAddress);
 
     try {
-        const orderId = `ORD_${Date.now()}`; // Generate a unique transaction ID
-        const callbackUrl = `${req.protocol}://${req.get("host")}/api/orders/phonepe-callback`; // Construct callback URL
+        const orderId = `ORD_${Date.now()}`;   // generate a unique transaction ID
 
         // Prepare payload for PhonePe
         const payload = {
             merchantId: PHONEPE_MERCHANT_ID,
-            transactionId: orderId,
-            amount: subtotal * 100, // Convert subtotal to paise
-            merchantUserId: currentUser._id,
-            redirectUrl: callbackUrl,
+            merchantTransactionId: orderId,
+            name: deliveryAddress.name,
+            contact: deliveryAddress.contact,
+            amount: subtotal * 100,   // convert subtotal to rupee
+            redirectUrl: `${process.env.BACKEND_URL}/status?id=${orderId}`,
+            redirectMode: "POST",
+            paymentInstrument: {
+                type: "PAY_PAGE"
+            }
         };
 
+        const keyIndex = 1;   // default keyIndex in PhonePe is 1
         const encodedPayload = Buffer.from(JSON.stringify(payload)).toString("base64");
-        const checksum = crypto.createHmac("sha256", PHONEPE_SALT_KEY).update(encodedPayload).digest("base64");
+        // const checksum = crypto.createHmac("sha256", PHONEPE_SALT_KEY).update(encodedPayload).digest("base64");
+        const sha256 = crypto.createHash("sha256").update(encodedPayload + "/pg/v1/pay" + PHONEPE_SALT_KEY).digest("hex");
+        const checksum = sha256 + "###" + keyIndex;
 
         // Initiate payment request to PhonePe
-        const response = await axios.post(`${PHONEPE_BASE_URL}/pg/v1/pay`, encodedPayload, {
+        const response = await axios.post(`${PHONEPE_TEST_URL}`,encodedPayload, {
             headers: {
+                "accept": "application/json",
                 "Content-Type": "application/json",
                 "X-VERIFY": checksum,
             },
+            data: {
+                request: encodedPayload
+            }
         });
 
         if (response.data.success) {
@@ -51,10 +62,10 @@ router.post("/placeorder", async (req, res) => {
                 deliveryAddress,
                 orderAmount: subtotal,
                 transactionId: orderId,
-        });
+            });
 
-        await newOrder.save();
-        res.send({ paymentUrl: response.data.data.paymentUrl }); // Return payment URL to frontend
+            await newOrder.save();
+            res.send({ paymentUrl: response.data.data.paymentUrl });   // Return payment URL to frontend
         } else {
             res.status(400).json({ message: "Payment initiation failed" });
         }
