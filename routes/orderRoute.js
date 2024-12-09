@@ -38,21 +38,21 @@ router.post("/placeorder", async (req, res) => {
         });
 
         if (response.data.success) {
-        // Save the order to the database
-        const newOrder = new Order({
-            name: currentUser.name,
-            email: currentUser.email,
-            userid: currentUser._id,
-            orderItems: cartItems,
-            deliveryAddress,
-            orderAmount: subtotal,
-            transactionId: orderId,
-        });
+            // Save the order to the database
+            const newOrder = new Order({
+                name: currentUser.name,
+                email: currentUser.email,
+                userid: currentUser._id,
+                orderItems: cartItems,
+                deliveryAddress,
+                orderAmount: subtotal,
+                transactionId: orderId,
+            });
 
-        await newOrder.save();
-        res.send({ paymentUrl: response.data.data.paymentUrl }); // Return payment URL to frontend
+            await newOrder.save();
+            res.send({ paymentUrl: response.data.data.paymentUrl }); // Return payment URL to frontend
         } else {
-        res.status(400).json({ message: "Payment initiation failed" });
+            res.status(400).json({ message: "Payment initiation failed" });
         }
     } catch (error) {
         res.status(400).json({ message: `Error: ${error.message}` });
