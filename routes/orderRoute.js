@@ -8,6 +8,7 @@ const Order = require("../models/orderModel");
 const PHONEPE_MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID;
 const PHONEPE_SALT_KEY = process.env.PHONEPE_SALT_KEY;
 const PHONEPE_TEST_URL = process.env.PHONEPE_TEST_URL;
+const BACKEND_URL = process.env.BACKEND_URL;
 
 // Place order and initiate payment
 router.post("/placeorder", async (req, res) => {
@@ -20,28 +21,30 @@ router.post("/placeorder", async (req, res) => {
     try {
         const orderId = `ORD_${Date.now()}`;   // generate a unique transaction ID
 
-        // Prepare payload for PhonePe
+        // Step 1: Prepare payload for PhonePe
         const payload = {
             merchantId: PHONEPE_MERCHANT_ID,
             merchantTransactionId: orderId,
             name: deliveryAddress.name,
             contact: deliveryAddress.contact,
             amount: subtotal * 100,   // convert subtotal to rupee
-            redirectUrl: `${process.env.BACKEND_URL}/status?id=${orderId}`,
+            redirectUrl: `${BACKEND_URL}/status?id=${orderId}`,
             redirectMode: "POST",
             paymentInstrument: {
                 type: "PAY_PAGE"
             }
         };
 
-        const keyIndex = 1;   // default keyIndex in PhonePe is 1
+        const saltIndex = 1;   // default saltIndex in PhonePe is 1
         const encodedPayload = Buffer.from(JSON.stringify(payload)).toString("base64");
         // const checksum = crypto.createHmac("sha256", PHONEPE_SALT_KEY).update(encodedPayload).digest("base64");
         const sha256 = crypto.createHash("sha256").update(encodedPayload + "/pg/v1/pay" + PHONEPE_SALT_KEY).digest("hex");
-        const checksum = sha256 + "###" + keyIndex;
+        const checksum = sha256 + "###" + saltIndex;
 
-        // Initiate payment request to PhonePe
-        const response = await axios.post(`${PHONEPE_TEST_URL}`,encodedPayload, {
+        // Step 2: Initiate payment request to PhonePe
+        const options = {
+            method: "POST",
+            url: PHONEPE_TEST_URL,
             headers: {
                 "accept": "application/json",
                 "Content-Type": "application/json",
@@ -50,7 +53,19 @@ router.post("/placeorder", async (req, res) => {
             data: {
                 request: encodedPayload
             }
-        });
+        }
+
+        try {
+            const response = await axios(options);
+            console.log(response.data);
+            res.json(response.data);
+        } catch (error) {
+            console.error(error.message);
+            if (!res.headersSent) {   // prevent sending headers twice to avoid error: 429
+                res.status(500).json({ error: error.message });
+            }
+        }
+        
 
         if (response.data.success) {
             // Save the order to the database
