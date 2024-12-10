@@ -96,7 +96,7 @@ router.post("/placeorder", async (req, res) => {
 router.post("/status", async (req, res) => {
     try {
         const merchantId = PHONEPE_MERCHANT_ID;
-        const merchantTransactionId = orderId;
+        const merchantTransactionId = req.query.id;
         const string = `pg/v1/status/${merchantId}/${merchantTransactionId}` + PHONEPE_SALT_KEY;
         const sha256 = crypto.createHash("sha256").update(string).digest("hex");
         const checksum = sha256 + "###" + saltIndex;
@@ -108,7 +108,7 @@ router.post("/status", async (req, res) => {
                 accept: 'application/json',
                 'Content-Type': 'application/json',
                 'X-VERIFY': checksum,
-                'X-MERCHANT-ID': merchantId
+                'X-MERCHANT-ID': `${merchantId}`
             }
         }
 
