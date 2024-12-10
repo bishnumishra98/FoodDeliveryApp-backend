@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const crypto = require("crypto");
 const axios = require("axios");
+const { v4: uuidv4 } = require('uuid');
 const Order = require("../models/orderModel");
 
 // Load environment variables
@@ -12,9 +13,9 @@ const BACKEND_URL = process.env.BACKEND_URL;
 const FRONTEND_URL = process.env.FRONTEND_URL;
 
 // Generate a unique transaction ID
-const orderId = `ORD_${Date.now()}`;
+const orderId = `ORD_${uuidv4().replace(/-/g, '')}`;   // remove hyphens from uuid, because PhonePe API does not accept special characters (like hyphens)
 
-// Set default saltIndex in PhonePe, i.e., 1.
+// Set default saltIndex in PhonePe, i.e., 1
 const saltIndex = 1;
 
 // Place order and initiate payment
@@ -26,7 +27,7 @@ router.post("/placeorder", async (req, res) => {
     // console.log(deliveryAddress);
 
     try {
-        // Step 1: Prepare payload for PhonePe
+        // Step 1: Prepare payload for PhonePe.
         const payload = {
             merchantId: PHONEPE_MERCHANT_ID,   // unique ID of the merchant
             merchantTransactionId: orderId,   // unique transaction ID for this order
@@ -46,7 +47,7 @@ router.post("/placeorder", async (req, res) => {
         const sha256 = crypto.createHash("sha256").update(string).digest("hex");
         const checksum = sha256 + "###" + saltIndex;
 
-        // Step 2: Prepare payment request for PhonePe API
+        // Step 2: Prepare payment request for PhonePe API.
         const options = {
             method: "POST",
             url: `${PHONEPE_TEST_BASE_URL}/pg/v1/pay`,
