@@ -20,32 +20,33 @@ const saltIndex = 1;
 // Place order and initiate payment
 router.post("/placeorder", async (req, res) => {
     const { currentUser, cartItems, subtotal, deliveryAddress } = req.body;
-    console.log(currentUser);
-    console.log(cartItems);
-    console.log(subtotal);
-    console.log(deliveryAddress);
+    // console.log(currentUser);
+    // console.log(cartItems);
+    // console.log(subtotal);
+    // console.log(deliveryAddress);
 
     try {
         // Step 1: Prepare payload for PhonePe
         const payload = {
-            merchantId: PHONEPE_MERCHANT_ID,
-            merchantTransactionId: orderId,
+            merchantId: PHONEPE_MERCHANT_ID,   // unique ID of the merchant
+            merchantTransactionId: orderId,   // unique transaction ID for this order
             name: deliveryAddress.name,
             contact: deliveryAddress.contact,
             amount: subtotal * 100,   // convert subtotal to rupee
             redirectUrl: `${BACKEND_URL}/status?id=${orderId}`,
-            redirectMode: "POST",
+            redirectMode: "POST",   // HTTP method for redirection
             paymentInstrument: {
-                type: "PAY_PAGE"
+                type: "PAY_PAGE"   // payment type; "PAY_PAGE" opens a payment gateway page
             }
         };
 
+        // Encode the payload and generate checksum for request verification
         const encodedPayload = Buffer.from(JSON.stringify(payload)).toString("base64");
         const string = encodedPayload + "/pg/v1/pay" + PHONEPE_SALT_KEY;
         const sha256 = crypto.createHash("sha256").update(string).digest("hex");
         const checksum = sha256 + "###" + saltIndex;
 
-        // Step 2: Initiate payment request to PhonePe
+        // Step 2: Prepare payment request for PhonePe API
         const options = {
             method: "POST",
             url: `${PHONEPE_TEST_BASE_URL}/pg/v1/pay`,
@@ -59,18 +60,10 @@ router.post("/placeorder", async (req, res) => {
             }
         }
 
-        try {
-            const response = await axios(options);
-            console.log(response.data);
-            res.json(response.data);
-        } catch (error) {
-            console.error(error.message);
-            if (!res.headersSent) {   // prevent sending headers twice to avoid error: 429
-                res.status(500).json({ error: error.message });
-            }
-        }
+        // Step 3: Send the payment initiation request to PhonePe API with the configured options.
+        const response = await axios(options);
         
-        // 3. If initiate payment is successful, then save the order to the database
+        // Step 4: If payment initiation is successful, then save the order to the database and send response to frontend.
         if (response.data.success) {
             const newOrder = new Order({
                 name: currentUser.name,
@@ -82,13 +75,15 @@ router.post("/placeorder", async (req, res) => {
                 transactionId: orderId,
             });
 
-            await newOrder.save();
-            res.send({ paymentUrl: response.data.data.instrumentResponse.redirectInfo.url });   // Return payment URL to frontend
+            await newOrder.save();   // save order to the database
+            res.json(response.data);   // send success response to frontend
         } else {
             res.status(400).json({ message: "Payment initiation failed" });
         }
     } catch (error) {
-        res.status(400).json({ message: `Error: ${error.message}` });
+        if (!res.headersSent) {
+            return res.status(500).json({ error: error.message });
+        }
     }
 });
 
@@ -122,7 +117,7 @@ router.post("/status", async (req, res) => {
             res.send("Payment failed");
         }
     } catch (error) {
-        return res.status(400).json({ message: 'Something went wrong' + error});
+        return res.status(400).json({ message: `Something went wrong: ${error.message}` });
     }
 });
 
