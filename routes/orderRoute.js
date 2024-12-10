@@ -7,8 +7,15 @@ const Order = require("../models/orderModel");
 // Load environment variables
 const PHONEPE_MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID;
 const PHONEPE_SALT_KEY = process.env.PHONEPE_SALT_KEY;
-const PHONEPE_TEST_URL = process.env.PHONEPE_TEST_URL;
+const PHONEPE_TEST_BASE_URL = process.env.PHONEPE_TEST_BASE_URL;
 const BACKEND_URL = process.env.BACKEND_URL;
+const FRONTEND_URL = process.env.FRONTEND_URL;
+
+// Generate a unique transaction ID
+const orderId = `ORD_${Date.now()}`;
+
+// Set default saltIndex in PhonePe, i.e., 1.
+const saltIndex = 1;
 
 // Place order and initiate payment
 router.post("/placeorder", async (req, res) => {
@@ -19,8 +26,6 @@ router.post("/placeorder", async (req, res) => {
     console.log(deliveryAddress);
 
     try {
-        const orderId = `ORD_${Date.now()}`;   // generate a unique transaction ID
-
         // Step 1: Prepare payload for PhonePe
         const payload = {
             merchantId: PHONEPE_MERCHANT_ID,
@@ -35,18 +40,17 @@ router.post("/placeorder", async (req, res) => {
             }
         };
 
-        const saltIndex = 1;   // default saltIndex in PhonePe is 1
         const encodedPayload = Buffer.from(JSON.stringify(payload)).toString("base64");
-        // const checksum = crypto.createHmac("sha256", PHONEPE_SALT_KEY).update(encodedPayload).digest("base64");
-        const sha256 = crypto.createHash("sha256").update(encodedPayload + "/pg/v1/pay" + PHONEPE_SALT_KEY).digest("hex");
+        const string = encodedPayload + "/pg/v1/pay" + PHONEPE_SALT_KEY;
+        const sha256 = crypto.createHash("sha256").update(string).digest("hex");
         const checksum = sha256 + "###" + saltIndex;
 
         // Step 2: Initiate payment request to PhonePe
         const options = {
             method: "POST",
-            url: PHONEPE_TEST_URL,
+            url: `${PHONEPE_TEST_BASE_URL}/pg/v1/pay`,
             headers: {
-                "accept": "application/json",
+                accept: "application/json",
                 "Content-Type": "application/json",
                 "X-VERIFY": checksum,
             },
@@ -66,9 +70,8 @@ router.post("/placeorder", async (req, res) => {
             }
         }
         
-
+        // 3. If initiate payment is successful, then save the order to the database
         if (response.data.success) {
-            // Save the order to the database
             const newOrder = new Order({
                 name: currentUser.name,
                 email: currentUser.email,
@@ -80,7 +83,7 @@ router.post("/placeorder", async (req, res) => {
             });
 
             await newOrder.save();
-            res.send({ paymentUrl: response.data.data.paymentUrl });   // Return payment URL to frontend
+            res.send({ paymentUrl: response.data.data.instrumentResponse.redirectInfo.url });   // Return payment URL to frontend
         } else {
             res.status(400).json({ message: "Payment initiation failed" });
         }
@@ -89,11 +92,38 @@ router.post("/placeorder", async (req, res) => {
     }
 });
 
-// Handle PhonePe payment callback
-router.post("/phonepe-callback", (req, res) => {
-    console.log("Payment callback received:", req.body);
-    // Ideally, verify the callback's integrity using PhonePe's signature or checksum
-    res.sendStatus(200); // Respond with HTTP 200 to acknowledge receipt
+// Handle redirect url after payment
+router.post("/status", async (req, res) => {
+    try {
+        const merchantId = PHONEPE_MERCHANT_ID;
+        const merchantTransactionId = orderId;
+        const string = `pg/v1/status/${merchantId}/${merchantTransactionId}` + PHONEPE_SALT_KEY;
+        const sha256 = crypto.createHash("sha256").update(string).digest("hex");
+        const checksum = sha256 + "###" + saltIndex;
+
+        const options = {
+            method: 'GET',
+            url: `${PHONEPE_TEST_BASE_URL}/pg/v1/status/${merchantId}/${merchantTransactionId}`,
+            headers: {
+                accept: 'application/json',
+                'Content-Type': 'application/json',
+                'X-VERIFY': checksum,
+                'X-MERCHANT-ID': merchantId
+            }
+        }
+
+        const response = await axios.request(options);
+
+        // If payment was successful, redirect the user to orders page.
+        if (response.data.success) {
+            const url = `${FRONTEND_URL}/orders`;
+            return res.redirect(url);
+        } else {
+            res.send("Payment failed");
+        }
+    } catch (error) {
+        return res.status(400).json({ message: 'Something went wrong' + error});
+    }
 });
 
 // Get user orders
