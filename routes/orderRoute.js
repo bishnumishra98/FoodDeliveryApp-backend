@@ -108,6 +108,7 @@ router.post("/status", async (req, res) => {
             }
         }
 
+        // Make request to PhonePe to check payment status
         const response = await axios.request(options);
 
         // If payment was successful, redirect the user to orders page.
