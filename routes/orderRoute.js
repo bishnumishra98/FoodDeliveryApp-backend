@@ -34,7 +34,7 @@ router.post("/placeorder", async (req, res) => {
             name: deliveryAddress.name,
             contact: deliveryAddress.contact,
             amount: subtotal * 100,   // convert subtotal to rupee
-            redirectUrl: `${BACKEND_URL}/status?id=${orderId}`,
+            redirectUrl: `${BACKEND_URL}/api/orders/status?id=${orderId}`,
             redirectMode: "POST",   // HTTP method for redirection
             paymentInstrument: {
                 type: "PAY_PAGE"   // payment type; "PAY_PAGE" opens a payment gateway page
@@ -104,7 +104,7 @@ router.post("/status", async (req, res) => {
                 accept: 'application/json',
                 'Content-Type': 'application/json',
                 'X-VERIFY': checksum,
-                'X-MERCHANT-ID': `${merchantId}`
+                'X-MERCHANT-ID': merchantId
             }
         }
 
