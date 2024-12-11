@@ -15,4 +15,4 @@ const orderSchema = mongoose.Schema({
     }
 );
 
-module.exports = mongoose.model("temporder", orderSchema);
+module.exports = mongoose.model("failedorder", orderSchema);

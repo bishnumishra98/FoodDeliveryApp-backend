@@ -4,7 +4,7 @@ const crypto = require("crypto");
 const axios = require("axios");
 const { v4: uuidv4 } = require('uuid');
 const Order = require("../models/orderModel");
-const TempOrder = require("../models/temporderModel");
+const FailedOrder = require("../models/failedorderModel");
 
 // Load environment variables
 const PHONEPE_MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID;
@@ -65,9 +65,9 @@ router.post("/placeorder", async (req, res) => {
         // Step 3: Send the payment initiation request to PhonePe API with the configured options.
         const response = await axios(options);
         
-        // Step 4: If payment initiation is successful, then save the order to the 'temporders' collection in DB and send response to frontend.
+        // Step 4: If payment initiation is successful, then save the order to the 'failedorders' collection in DB and send response to frontend.
         if (response.data.success) {
-            const newOrder = new TempOrder({
+            const newOrder = new FailedOrder({
                 name: currentUser.name,
                 email: currentUser.email,
                 userid: currentUser._id,
@@ -111,11 +111,11 @@ router.post("/status", async (req, res) => {
         // Make request to PhonePe to check payment status
         const response = await axios.request(options);
 
-        // If payment is successful, save the 'temporders' collection permanently into 'orders' collection, and redirect the user to orders page.
+        // If payment is successful, save the 'failedorders' collection permanently into 'orders' collection,
+        // erase data the order from 'failedorders' collection, and finally redirect the user to orders page.
         if (response.data.success) {
-            // Retrieve temporary order details
-            const temp = await TempOrder.findOne({ transactionId: merchantTransactionId });
-            console.log("temp:", temp);
+            const temp = await FailedOrder.findOne({ transactionId: merchantTransactionId });
+            // console.log("temp:", temp);
             
             if(!temp) {
                 return res.status(404).json({ message: "Temporary order not found" });
@@ -134,7 +134,7 @@ router.post("/status", async (req, res) => {
             await newOrder.save();   // save newOrder to the database
 
             // Remove temporary order
-            await TempOrder.deleteOne({ transactionId: merchantTransactionId });
+            await FailedOrder.deleteOne({ transactionId: merchantTransactionId });
 
             // Redirect the user to orders page
             const url = `${FRONTEND_URL}/orders`;
