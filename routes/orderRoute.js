@@ -77,7 +77,7 @@ router.post("/placeorder", async (req, res) => {
             });
 
             await newOrder.save();   // save order to the database
-            res.json(response.data);   // send success response to frontend
+            res.json(response.data);   // send payment initiation success response to frontend
         } else {
             res.status(400).json({ message: "Payment initiation failed" });
         }
