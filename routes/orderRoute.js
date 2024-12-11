@@ -4,6 +4,7 @@ const crypto = require("crypto");
 const axios = require("axios");
 const { v4: uuidv4 } = require('uuid');
 const Order = require("../models/orderModel");
+const TempOrder = require("../models/temporderModel");
 
 // Load environment variables
 const PHONEPE_MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID;
@@ -64,9 +65,9 @@ router.post("/placeorder", async (req, res) => {
         // Step 3: Send the payment initiation request to PhonePe API with the configured options.
         const response = await axios(options);
         
-        // Step 4: If payment initiation is successful, then save the order to the database and send response to frontend.
+        // Step 4: If payment initiation is successful, then save the order to the 'temporders' collection in DB and send response to frontend.
         if (response.data.success) {
-            const newOrder = new Order({
+            const newOrder = new TempOrder({
                 name: currentUser.name,
                 email: currentUser.email,
                 userid: currentUser._id,
@@ -75,8 +76,7 @@ router.post("/placeorder", async (req, res) => {
                 orderAmount: subtotal,
                 transactionId: orderId,
             });
-
-            await newOrder.save();   // save order to the database
+            await newOrder.save();   // save newOrder to the database
             res.json(response.data);   // send payment initiation success response to frontend
         } else {
             res.status(400).json({ message: "Payment initiation failed" });
@@ -111,8 +111,32 @@ router.post("/status", async (req, res) => {
         // Make request to PhonePe to check payment status
         const response = await axios.request(options);
 
-        // If payment was successful, redirect the user to orders page.
+        // If payment was successful, save the 'temporders' collection permanently into 'orders' collection, and redirect the user to orders page.
         if (response.data.success) {
+            // Retrieve temporary order details
+            const temp = await TempOrder.findOne({ transactionId: merchantTransactionId });
+            console.log("temp:", temp);
+            
+            if(!temp) {
+                return res.status(404).json({ message: "Temporary order not found" });
+            }
+
+            // Save 'temporders' collection permanently into 'orders' collection
+            const newOrder = new Order({
+                name: temp.name,
+                email: temp.email,
+                userid: temp.userid,
+                orderItems: temp.orderItems,
+                deliveryAddress: temp.deliveryAddress,
+                orderAmount: temp.orderAmount,
+                transactionId: temp.transactionId,
+            });
+            await newOrder.save();   // save newOrder to the database
+
+            // Remove temporary order
+            await TempOrder.deleteOne({ transactionId: merchantTransactionId });
+
+            // Redirect the user to orders page
             const url = `${FRONTEND_URL}/orders`;
             return res.redirect(url);
         } else {
