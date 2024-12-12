@@ -14,7 +14,7 @@ const BACKEND_URL = process.env.BACKEND_URL;
 const FRONTEND_URL = process.env.FRONTEND_URL;
 
 // Generate a unique transaction ID
-const orderId = `ORD_${uuidv4().replace(/-/g, '')}`;   // remove hyphens from uuid, because PhonePe API does not accept special characters (like hyphens)
+const orderId = `T${uuidv4().replace(/-/g, '')}`;   // remove hyphens from uuid, because PhonePe API does not accept special characters (like hyphens)
 
 // Set default saltIndex in PhonePe, i.e., 1
 const saltIndex = 1;
