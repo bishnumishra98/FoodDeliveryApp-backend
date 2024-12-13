@@ -137,10 +137,11 @@ router.post("/status", async (req, res) => {
             await FailedOrder.deleteOne({ transactionId: merchantTransactionId });
 
             // Redirect the user to orders page
-            const url = `${FRONTEND_URL}/orders`;
+            const url = `${FRONTEND_URL}/orders?paymentSuccess=true`;
             return res.redirect(url);
         } else {
-            res.send("Payment failed");
+            const url = `${FRONTEND_URL}/failedpayment`;
+            return res.redirect(url);
         }
     } catch (error) {
         return res.status(400).json({ message: `Something went wrong: ${error.message}` });
