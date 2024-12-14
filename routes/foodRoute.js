@@ -48,6 +48,18 @@ router.get("/getallfoods", async (req, res) => {
     }
 });
 
+// Route to get food by its id
+router.post("/getfoodbyid", async (req, res) => {
+    const foodId = req.body.foodId;
+
+    try {
+        const food = await Food.findOne({ _id: foodId });
+        res.send(food);
+    } catch (error) {
+        return res.status(400).json({ message: error.message });
+    }
+});
+
 // Route to add food with image upload
 router.post("/addfood", upload.single("image"), async (req, res) => {
     // If there is an error during file upload, handle it
@@ -83,5 +95,41 @@ router.post("/addfood", upload.single("image"), async (req, res) => {
         return res.status(400).json({ message: error });
     }
 });
+
+// Route to edit food with image upload
+router.post("/editfood", upload.single("image"), async (req, res) => {
+	console.log(req.body);
+	// If there is an error during file upload, handle it
+    if (req.fileValidationError) {
+        return res.status(400).json({ message: req.fileValidationError });
+    }
+
+    const editedFood = JSON.parse(req.body.food);   // parse the food object
+    const editedImageFile = req.file.path;   // get the uploaded file path
+	
+    try {
+		// Upload image to Cloudinary
+        const uploadResponse = await cloudinary.uploader.upload(editedImageFile);
+
+        const food = await Food.findOne({ _id: editedFood._id });
+
+		// Delete the old image from Cloudinary
+		// await cloudinary.uploader.destroy(food.image.public_id);
+
+        food.name = editedFood.name;
+		food.size = editedFood.size;
+		food.price = editedFood.price;
+		food.category = editedFood.category;
+		food.image = uploadResponse.secure_url,   // save Cloudinary URL
+        food.description = editedFood.description;
+
+        await food.save();
+
+        res.send("Food details edited successfully");
+    } catch (error) {
+        return res.status(400).json({ message: error.message });
+    }
+});
+
 
 module.exports = router;
