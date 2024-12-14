@@ -6,6 +6,7 @@ const foodSchema = new mongoose.Schema({
 		price: { type: Number, required: true },
 		category: { type: String, required: true },
 		image: { type: String, required: true },
+		image_public_id: { type: String },
 		description: { type: String, required: true },
 	}, {
 		timestamps: true,   // adds createdAt and updatedAt fields automatically

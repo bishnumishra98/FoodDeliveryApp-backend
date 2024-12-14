@@ -85,7 +85,8 @@ router.post("/addfood", upload.single("image"), async (req, res) => {
             size: food.size,
             price: food.price,
             category: food.category,
-            image: uploadResponse.secure_url,   // save Cloudinary URL
+            image: uploadResponse.secure_url,
+			image_public_id: uploadResponse.public_id,
             description: food.description,
         });
 
@@ -114,13 +115,14 @@ router.post("/editfood", upload.single("image"), async (req, res) => {
         const food = await Food.findOne({ _id: editedFood._id });
 
 		// Delete the old image from Cloudinary
-		// await cloudinary.uploader.destroy(food.image.public_id);
+		await cloudinary.uploader.destroy(food.image_public_id);
 
         food.name = editedFood.name;
 		food.size = editedFood.size;
 		food.price = editedFood.price;
 		food.category = editedFood.category;
-		food.image = uploadResponse.secure_url,   // save Cloudinary URL
+		food.image = uploadResponse.secure_url,
+		food.image_public_id = uploadResponse.public_id,
         food.description = editedFood.description;
 
         await food.save();
