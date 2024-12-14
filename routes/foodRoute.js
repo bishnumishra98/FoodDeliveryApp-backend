@@ -23,9 +23,8 @@ router.get("/getallfoods", async (req, res) => {
 router.post("/addfood", upload.single("image"), async (req, res) => {
     const food = JSON.parse(req.body.food);   // form data requires parsing
     const imageFile = req.file.path;   // path of the uploaded file
-	console.log("imageFile", imageFile);
+	// console.log("imageFile", imageFile);
 	
-
     try {
         // Upload image to Cloudinary
         const uploadResponse = await cloudinary.uploader.upload(imageFile);
