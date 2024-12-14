@@ -57,7 +57,7 @@ router.post("/addfood", upload.single("image"), async (req, res) => {
 
     // If file size exceeds limit, multer will throw an error
     if (req.file && req.file.size > 10 * 1024 * 1024) {
-        return res.status(400).json({ message: "File size exceeds 10MB." });
+        return res.status(400).json({ message: "File size should not exceed 10MB." });
     }
 
     const food = JSON.parse(req.body.food);   // parse the food object
