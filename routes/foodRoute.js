@@ -99,7 +99,6 @@ router.post("/addfood", upload.single("image"), async (req, res) => {
 
 // Route to edit food with image upload
 router.post("/editfood", upload.single("image"), async (req, res) => {
-	console.log(req.body);
 	// If there is an error during file upload, handle it
     if (req.fileValidationError) {
         return res.status(400).json({ message: req.fileValidationError });
