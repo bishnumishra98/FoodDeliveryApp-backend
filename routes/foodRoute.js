@@ -168,5 +168,27 @@ router.put("/editfood", upload.single("image"), async (req, res) => {
     }
 });
 
+// Route to delete food
+router.delete("/deletefood", async(req, res) => {
+    const foodid = req.body.foodid;
+    // console.log(foodid);
+    
+    try {
+        // Find the food which needs to be deleted
+        const food = await Food.findOne({ _id: foodid });
+
+        // Delete the food image file from Cloudinary
+        if (food.image_public_id) {
+            await cloudinary.uploader.destroy(food.image_public_id);
+        }
+
+        // Delete the whole food from DB
+        await Food.findByIdAndDelete(food._id);
+        res.send("Food deleted successfully");
+    } catch (error) {
+        return res.status(400).json({ message: error });
+    }
+});
+
 
 module.exports = router;
