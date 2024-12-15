@@ -72,10 +72,11 @@ router.post("/addfood", upload.single("image"), async (req, res) => {
         return res.status(400).json({ message: "File size should not exceed 10MB." });
     }
 
-    const food = JSON.parse(req.body.food);   // parse the food object
-    const imageFile = req.file.path;   // get the uploaded file path
-
     try {
+        const food = JSON.parse(req.body.food);   // parse the food object
+        const imageFile = req.file.path;   // get the uploaded file path
+        // console.log(imageFile);
+
         // Upload image to Cloudinary
         const uploadResponse = await cloudinary.uploader.upload(imageFile);
 
@@ -86,6 +87,7 @@ router.post("/addfood", upload.single("image"), async (req, res) => {
             price: food.price,
             category: food.category,
             image: uploadResponse.secure_url,
+            imageName: food.imageName,
 			image_public_id: uploadResponse.public_id,
             description: food.description,
         });
@@ -104,31 +106,47 @@ router.post("/editfood", upload.single("image"), async (req, res) => {
         return res.status(400).json({ message: req.fileValidationError });
     }
 
-    const editedFood = JSON.parse(req.body.food);   // parse the food object
-    const editedImageFile = req.file.path;   // get the uploaded file path
-	
     try {
-		// Upload image to Cloudinary
-        const uploadResponse = await cloudinary.uploader.upload(editedImageFile);
+        const editedFood = JSON.parse(req.body.food);
 
+        // Find the existing food item in the database
         const food = await Food.findOne({ _id: editedFood._id });
+        if (!food) {
+            return res.status(404).json({ message: "Food item not found" });
+        }
 
-		// Delete the old image from Cloudinary
-		await cloudinary.uploader.destroy(food.image_public_id);
+        // If a new image is uploaded, update image fields
+        if (req.file) {
+            const editedImageFile = req.file.path;   // uploaded file path
 
+            // Upload the new image to Cloudinary
+            const uploadResponse = await cloudinary.uploader.upload(editedImageFile);
+
+            // Delete the old image from Cloudinary, if it exists
+            if (food.image_public_id) {
+                await cloudinary.uploader.destroy(food.image_public_id);
+            }
+
+            // Update image fields
+            food.image = uploadResponse.secure_url;
+            food.image_public_id = uploadResponse.public_id;
+        }
+
+        // Update other fields
         food.name = editedFood.name;
-		food.size = editedFood.size;
-		food.price = editedFood.price;
-		food.category = editedFood.category;
-		food.image = uploadResponse.secure_url,
-		food.image_public_id = uploadResponse.public_id,
+        food.size = editedFood.size;
+        food.price = editedFood.price;
+        food.category = editedFood.category;
+        food.imageName = editedFood.imageName;
         food.description = editedFood.description;
 
+        // Save updated food details to the database
         await food.save();
 
         res.send("Food details edited successfully");
     } catch (error) {
-        return res.status(400).json({ message: error.message });
+        console.error("Error editing food:", error.message);
+        return res.status(500).json({ message: "Internal server error", error: error.message });
     }
 });
 
