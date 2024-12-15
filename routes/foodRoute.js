@@ -3,6 +3,7 @@ const router = express.Router();
 const Food = require("../models/foodModel");
 const cloudinary = require('cloudinary').v2;
 const multer = require("multer");
+const fs = require("fs");
 
 // Set up Multer to restrict file size and types
 const storage = multer.diskStorage({
@@ -37,6 +38,17 @@ cloudinary.config({
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET,
 });
+
+// Function to delete the temporary stored image file from the server
+const deleteFileFromServer = (filePath) => {
+    fs.unlink(filePath, (err) => {
+        if (err) {
+            console.error(`Failed to delete file: ${filePath}. Error: ${err.message}`);
+        } else {
+            console.log(`File deleted: ${filePath}`);
+        }
+    });
+};
 
 // Route to get all food items
 router.get("/getallfoods", async (req, res) => {
@@ -79,6 +91,9 @@ router.post("/addfood", upload.single("image"), async (req, res) => {
 
         // Upload image to Cloudinary
         const uploadResponse = await cloudinary.uploader.upload(imageFile);
+
+        // Delete the file from server after successful upload to Cloudinary
+        deleteFileFromServer(imageFile);
 
         // Create new food item with Cloudinary image URL
         const newfood = new Food({
@@ -126,6 +141,9 @@ router.post("/editfood", upload.single("image"), async (req, res) => {
             if (food.image_public_id) {
                 await cloudinary.uploader.destroy(food.image_public_id);
             }
+
+            // Delete the file from server after successful upload to Cloudinary
+            deleteFileFromServer(editedImageFile);
 
             // Update image fields
             food.image = uploadResponse.secure_url;
