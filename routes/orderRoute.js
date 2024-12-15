@@ -177,11 +177,11 @@ router.post("/deliverorder", async (req, res) => {
     try {
         const order = await Order.findOne({ _id: orderid });
         if (!order) {
-        return res.status(404).json({ message: "Order not found" });
+            return res.status(404).json({ message: "Order not found" });
         }
         order.isDelivered = true;
         await order.save();
-        res.send("Order Delivered Successfully");
+        res.send("Order delivered successfully");
     } catch (error) {
         res.status(400).json({ message: error.message });
     }
