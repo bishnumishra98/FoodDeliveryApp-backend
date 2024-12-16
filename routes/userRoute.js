@@ -48,6 +48,27 @@ router.get("/getallusers", async(req, res) => {
   
 });
 
+router.put("/updatestatus", async (req, res) => {
+    const { userId, isAdmin } = req.body;
+
+    try {
+        // Find the user by ID
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Update the user's admin status
+        user.isAdmin = isAdmin;
+        await user.save();
+
+        res.status(200).json({ message: "User status updated successfully", user });
+    } catch (error) {
+        console.error("Error updating user status:", error.message);
+        res.status(500).json({ message: "Internal server error", error: error.message });
+    }
+});
+
 router.post("/deleteuser", async(req, res) => {
     const userid = req.body.userid;
 
