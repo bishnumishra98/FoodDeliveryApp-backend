@@ -1,35 +1,26 @@
 const express = require("express");
 const router = express.Router();
 const Food = require("../models/foodModel");
-const cloudinary = require('cloudinary').v2;
+const cloudinary = require("cloudinary").v2;
 const multer = require("multer");
-const fs = require("fs");
 
-// Set up Multer to restrict file size and types
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads/');   // set destination folder for temporary uploads
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + '-' + file.originalname);   // set unique filename
-    }
-});
-
+// Set up Multer to use memory storage
+const storage = multer.memoryStorage(); // Store files in memory instead of disk
 const fileFilter = (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|gif|svg\+xml|webp/;
     const mimeType = allowedTypes.test(file.mimetype);
 
     if (mimeType) {
-        cb(null, true);   // allow file
+        cb(null, true); // allow file
     } else {
-        cb(new Error('Invalid file type! Only images and gifs are allowed.'), false);   // reject file
+        cb(new Error("Invalid file type! Only images and gifs are allowed."), false); // reject file
     }
 };
 
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 10 * 1024 * 1024 },   // set file size limit to 10MB
-    fileFilter: fileFilter,   // set file type filter
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+    fileFilter: fileFilter,
 });
 
 // Cloudinary configuration
@@ -38,17 +29,6 @@ cloudinary.config({
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-
-// Function to delete the temporary stored image file from the server
-const deleteFileFromServer = (filePath) => {
-    fs.unlink(filePath, (err) => {
-        if (err) {
-            console.error(`Failed to delete temp file on server: ${err.message}`);
-        } else {
-            console.log("Temp file on server deleted");
-        }
-    });
-};
 
 // Route to get all food items
 router.get("/getallfoods", async (req, res) => {
@@ -74,26 +54,23 @@ router.post("/getfoodbyid", async (req, res) => {
 
 // Route to add food with image upload
 router.post("/addfood", upload.single("image"), async (req, res) => {
-    // If there is an error during file upload, handle it
     if (req.fileValidationError) {
         return res.status(400).json({ message: req.fileValidationError });
     }
 
-    // If file size exceeds limit, multer will throw an error
-    if (req.file && req.file.size > 10 * 1024 * 1024) {
-        return res.status(400).json({ message: "File size should not exceed 10MB." });
-    }
-
     try {
-        const food = JSON.parse(req.body.food);   // parse the food object
-        const imageFile = req.file.path;   // get the uploaded file path
-        // console.log(imageFile);
+        const food = JSON.parse(req.body.food); // parse the food object
 
-        // Upload image to Cloudinary
-        const uploadResponse = await cloudinary.uploader.upload(imageFile);
-
-        // Delete the file from server after successful upload to Cloudinary
-        deleteFileFromServer(imageFile);
+        // Upload image to Cloudinary directly from memory buffer
+        const uploadResponse = await new Promise((resolve, reject) => {
+            cloudinary.uploader.upload_stream(
+                { resource_type: "image" },
+                (error, result) => {
+                    if (error) reject(error);
+                    else resolve(result);
+                }
+            ).end(req.file.buffer);
+        });
 
         // Create new food item with Cloudinary image URL
         const newfood = new Food({
@@ -103,20 +80,20 @@ router.post("/addfood", upload.single("image"), async (req, res) => {
             category: food.category,
             image: uploadResponse.secure_url,
             imageName: food.imageName,
-			image_public_id: uploadResponse.public_id,
+            image_public_id: uploadResponse.public_id,
             description: food.description,
         });
 
         await newfood.save();
         res.send("New food added successfully");
     } catch (error) {
-        return res.status(400).json({ message: error });
+        console.error("Error adding food:", error.message);
+        return res.status(500).json({ message: "Internal server error", error: error.message });
     }
 });
 
 // Route to edit food with image upload
 router.put("/editfood", upload.single("image"), async (req, res) => {
-	// If there is an error during file upload, handle it
     if (req.fileValidationError) {
         return res.status(400).json({ message: req.fileValidationError });
     }
@@ -132,18 +109,21 @@ router.put("/editfood", upload.single("image"), async (req, res) => {
 
         // If a new image is uploaded, update image fields
         if (req.file) {
-            const editedImageFile = req.file.path;   // uploaded file path
-
             // Upload the new image to Cloudinary
-            const uploadResponse = await cloudinary.uploader.upload(editedImageFile);
+            const uploadResponse = await new Promise((resolve, reject) => {
+                cloudinary.uploader.upload_stream(
+                    { resource_type: "image" },
+                    (error, result) => {
+                        if (error) reject(error);
+                        else resolve(result);
+                    }
+                ).end(req.file.buffer);
+            });
 
             // Delete the old image from Cloudinary, if it exists
             if (food.image_public_id) {
                 await cloudinary.uploader.destroy(food.image_public_id);
             }
-
-            // Delete the file from server after successful upload to Cloudinary
-            deleteFileFromServer(editedImageFile);
 
             // Update image fields
             food.image = uploadResponse.secure_url;
@@ -160,7 +140,6 @@ router.put("/editfood", upload.single("image"), async (req, res) => {
 
         // Save updated food details to the database
         await food.save();
-
         res.send("Food details edited successfully");
     } catch (error) {
         console.error("Error editing food:", error.message);
@@ -169,10 +148,9 @@ router.put("/editfood", upload.single("image"), async (req, res) => {
 });
 
 // Route to delete food
-router.delete("/deletefood", async(req, res) => {
+router.delete("/deletefood", async (req, res) => {
     const foodid = req.body.foodid;
-    // console.log(foodid);
-    
+
     try {
         // Find the food which needs to be deleted
         const food = await Food.findOne({ _id: foodid });
@@ -186,9 +164,9 @@ router.delete("/deletefood", async(req, res) => {
         await Food.findByIdAndDelete(food._id);
         res.send("Food deleted successfully");
     } catch (error) {
+        console.error("Error deleting food:", error.message);
         return res.status(400).json({ message: error });
     }
 });
-
 
 module.exports = router;
