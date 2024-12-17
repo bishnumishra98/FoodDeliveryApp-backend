@@ -59,7 +59,7 @@ io.on("connection", (socket) => {
 				return;
 			}
 	
-			const orderId = data.orderId;  // Assume data.orderId is a string
+			const orderId = data.orderId;
 			const newStatus = data.newStatus;
 	
 			// Update the order without manually converting ObjectId
