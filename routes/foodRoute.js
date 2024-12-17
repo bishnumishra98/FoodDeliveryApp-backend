@@ -43,9 +43,9 @@ cloudinary.config({
 const deleteFileFromServer = (filePath) => {
     fs.unlink(filePath, (err) => {
         if (err) {
-            console.error(`Failed to delete file: ${filePath}. Error: ${err.message}`);
+            console.error(`Failed to delete temp file on server: ${err.message}`);
         } else {
-            console.log(`File deleted: ${filePath}`);
+            console.log("Temp file on server deleted");
         }
     });
 };
