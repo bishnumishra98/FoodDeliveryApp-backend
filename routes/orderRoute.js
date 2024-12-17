@@ -160,28 +160,32 @@ router.post("/getuserorders", async (req, res) => {
     }
 });
 
+// Route for delivery status (admin functionality)
+router.post("/deliverorder", async (req, res) => {
+    const { orderid, status } = req.body;   // receive both orderid and status
+
+    try {
+        const order = await Order.findOne({ _id: orderid });
+
+        if (!order) {
+            return res.status(404).json({ message: "Order not found" });
+        }
+
+        // Update the order's deliveryStatus with the provided status
+        order.deliveryStatus = status;
+
+        await order.save();   // save the updated order to the database
+        res.send("Order status updated successfully");   // respond with success
+    } catch (error) {
+        res.status(400).json({ message: error.message });   // handle errors
+    }
+});
+
 // Get all orders (admin functionality)
 router.get("/getallorders", async (req, res) => {
     try {
         const orders = await Order.find({});
         res.send(orders);
-    } catch (error) {
-        res.status(400).json({ message: error.message });
-    }
-});
-
-// Mark order as delivered (admin functionality)
-router.post("/deliverorder", async (req, res) => {
-    const { orderid } = req.body;
-
-    try {
-        const order = await Order.findOne({ _id: orderid });
-        if (!order) {
-            return res.status(404).json({ message: "Order not found" });
-        }
-        order.isDelivered = true;
-        await order.save();
-        res.send("Order delivered successfully");
     } catch (error) {
         res.status(400).json({ message: error.message });
     }

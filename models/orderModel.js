@@ -7,7 +7,7 @@ const orderSchema = mongoose.Schema({
         orderItems: [],
         deliveryAddress: { type: Object },
         orderAmount: { type: Number, require },
-        isDelivered: { type: Boolean, require, default: false },
+        deliveryStatus: { type: String, require, default: "placed" },
         transactionId: { type: String, require },
     },
     {
