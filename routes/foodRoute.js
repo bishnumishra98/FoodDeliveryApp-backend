@@ -5,21 +5,21 @@ const cloudinary = require("cloudinary").v2;
 const multer = require("multer");
 
 // Set up Multer to use memory storage
-const storage = multer.memoryStorage(); // Store files in memory instead of disk
+const storage = multer.memoryStorage();   // Store files in memory(RAM)
 const fileFilter = (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|gif|svg\+xml|webp/;
     const mimeType = allowedTypes.test(file.mimetype);
 
     if (mimeType) {
-        cb(null, true); // allow file
+        cb(null, true);   // allow file
     } else {
-        cb(new Error("Invalid file type! Only images and gifs are allowed."), false); // reject file
+        cb(new Error("Invalid file type! Only images and gifs are allowed."), false);   // reject file
     }
 };
 
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+    limits: { fileSize: 10 * 1024 * 1024 },   // 10MB limit
     fileFilter: fileFilter,
 });
 
@@ -59,7 +59,7 @@ router.post("/addfood", upload.single("image"), async (req, res) => {
     }
 
     try {
-        const food = JSON.parse(req.body.food); // parse the food object
+        const food = JSON.parse(req.body.food);   // parse the food object
 
         // Upload image to Cloudinary directly from memory buffer
         const uploadResponse = await new Promise((resolve, reject) => {
