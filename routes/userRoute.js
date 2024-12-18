@@ -32,7 +32,7 @@ const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,   // 15 minutes
     max: 5,   // allow up to 5 login attempts
     message: { 
-      status: 429, 
+      status: 429,
       message: "Too many login attempts. Please try again after 15 minutes." 
     }, 
     standardHeaders: true,   // return rate limit info in headers
