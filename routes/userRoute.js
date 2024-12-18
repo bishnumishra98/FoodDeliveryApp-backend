@@ -1,40 +1,80 @@
 const express = require("express");
 const router = express.Router();
 const User = require("../models/userModel");
+const bcrypt = require("bcryptjs");
+const rateLimit = require("express-rate-limit");
 
 router.post("/register", async (req, res) => {
-    const {name, email, password} = req.body;
-
-    const newUser = new User({name, email, password});   // create a new User object
+    const { name, email, password } = req.body;
 
     try {
-        await newUser.save();   // save the user to the database
+        // Check if any user exists already with this email or not
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ message: "This email is already registered" });
+        }
+
+        // Hash the password before saving to the database
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        const newUser = new User({ name, email, password: hashedPassword });   // save hashed password
+        await newUser.save();   // save user to the database
+
         res.send("User registered successfully.");
-    } catch(error) {
-        return res.status(400).json({ message: error });
+    } catch (error) {
+        return res.status(400).json({ message: error.message });
     }
 });
 
-router.post("/login", async (req, res) => {
-    const {email , password} = req.body
+// Rate limiter for login route
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,   // 15 minutes
+    max: 5,   // allow up to 5 login attempts
+    message: { 
+      status: 429, 
+      message: "Too many login attempts. Please try again after 15 minutes." 
+    }, 
+    standardHeaders: true,   // return rate limit info in headers
+    legacyHeaders: false,   // disable the `X-RateLimit-*` headers
+});
+
+router.post("/login", loginLimiter, async (req, res) => {
+    const { email, password } = req.body;
 
     try {
-        const user = await User.find({email , password});   // search for user in the database
-
-        if(user.length > 0) {   // check if the user exists
-            const currentUser = {
-                name : user[0].name , 
-                email : user[0].email, 
-                isAdmin : user[0].isAdmin, 
-                _id : user[0]._id
-            }
-            res.send(currentUser);   // send user data as response
-        } else {
-            return res.status(400).json({ message: 'User Login Failed' });
+        // Trim and validate inputs
+        if (!email || !password) {
+            return res.status(400).json({ success: false, message: "Email and password are required" });
+        }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ success: false, message: "Invalid email format" });
         }
 
+        // Find user by email
+        const user = await User.findOne({ email: email.trim() });
+
+        if (!user) {
+            return res.status(400).json({ success: false, message: "Invalid credentials" });
+        }
+
+        // Compare hashed password
+        const isMatch = await bcrypt.compare(password, user.password);
+
+        if (isMatch) {
+            const currentUser = {
+                name: user.name,
+                email: user.email,
+                _id: user._id,
+            };
+            res.send(currentUser);   // send user data as response
+        } else {
+            return res.status(400).json({ success: false, message: "Invalid credentials" });
+        }
     } catch (error) {
-           return res.status(400).json({ message: 'Something went weong' });
+        console.error("Login error:", error);
+        return res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 });
 
