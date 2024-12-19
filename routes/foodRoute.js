@@ -3,6 +3,7 @@ const router = express.Router();
 const Food = require("../models/foodModel");
 const cloudinary = require("cloudinary").v2;
 const multer = require("multer");
+const authenticateToken = require("../middlewares/auth");
 
 // Set up Multer to use memory storage
 const storage = multer.memoryStorage();   // Store files in memory(RAM)
@@ -41,7 +42,7 @@ router.get("/getallfoods", async (req, res) => {
 });
 
 // Route to get food by its id
-router.post("/getfoodbyid", async (req, res) => {
+router.post("/getfoodbyid", authenticateToken, async (req, res) => {
     const foodId = req.body.foodId;
 
     try {
@@ -53,7 +54,7 @@ router.post("/getfoodbyid", async (req, res) => {
 });
 
 // Route to add food with image upload
-router.post("/addfood", upload.single("image"), async (req, res) => {
+router.post("/addfood", authenticateToken, upload.single("image"), async (req, res) => {
     if (req.fileValidationError) {
         return res.status(400).json({ message: req.fileValidationError });
     }
@@ -93,7 +94,7 @@ router.post("/addfood", upload.single("image"), async (req, res) => {
 });
 
 // Route to edit food with image upload
-router.put("/editfood", upload.single("image"), async (req, res) => {
+router.put("/editfood", authenticateToken, upload.single("image"), async (req, res) => {
     if (req.fileValidationError) {
         return res.status(400).json({ message: req.fileValidationError });
     }
@@ -148,7 +149,7 @@ router.put("/editfood", upload.single("image"), async (req, res) => {
 });
 
 // Route to delete food
-router.delete("/deletefood", async (req, res) => {
+router.delete("/deletefood", authenticateToken, async (req, res) => {
     const foodid = req.body.foodid;
 
     try {
