@@ -3,6 +3,8 @@ const router = express.Router();
 const User = require("../models/userModel");
 const bcrypt = require("bcryptjs");
 const rateLimit = require("express-rate-limit");
+const jwt = require("jsonwebtoken");
+const authenticateToken = require("../middlewares/auth");
 
 router.post("/register", async (req, res) => {
     const { name, email, password } = req.body;
@@ -69,7 +71,14 @@ router.post("/login", loginLimiter, async (req, res) => {
                 isAdmin: user.isAdmin,
                 _id: user._id,
             };
-            res.send(currentUser);   // send user data as response
+            // Generate JWT token
+            const token = jwt.sign(
+                { id: user._id, isAdmin: user.isAdmin },   // payload
+                process.env.JWT_SECRET,   // secret key
+                { expiresIn: "1d" }   // token validity
+            );
+
+            res.status(200).json({ token, currentUser });
         } else {
             return res.status(400).json({ success: false, message: "Invalid credentials" });
         }
@@ -79,17 +88,16 @@ router.post("/login", loginLimiter, async (req, res) => {
     }
 });
 
-router.get("/getallusers", async(req, res) => {
+router.get("/getallusers", authenticateToken, async(req, res) => {
     try {
         const users = await User.find({});
         res.send(users);
     } catch (error) {
         return res.status(400).json({ message: error });
     }
-  
 });
 
-router.put("/updatestatus", async (req, res) => {
+router.put("/updatestatus", authenticateToken, async (req, res) => {
     const { userId, isAdmin } = req.body;
 
     try {
@@ -110,7 +118,7 @@ router.put("/updatestatus", async (req, res) => {
     }
 });
 
-router.post("/deleteuser", async(req, res) => {
+router.post("/deleteuser", authenticateToken, async(req, res) => {
     const userid = req.body.userid;
 
     try {

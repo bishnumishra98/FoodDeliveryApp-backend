@@ -3,7 +3,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
 const connectDB = require("./db");
-const Order = require("./models/orderModel"); // Assuming you have an Order model
+const Order = require("./models/orderModel");
 
 // Initialize the Express application
 const app = express();
