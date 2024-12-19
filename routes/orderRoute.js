@@ -5,6 +5,7 @@ const axios = require("axios");
 const { v4: uuidv4 } = require('uuid');
 const Order = require("../models/orderModel");
 const FailedOrder = require("../models/failedorderModel");
+const authenticateToken = require("../middlewares/auth");
 
 // Load environment variables
 const PHONEPE_MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID;
@@ -20,7 +21,7 @@ const orderId = `T${uuidv4().replace(/-/g, '')}`;   // remove hyphens from uuid,
 const saltIndex = 1;
 
 // Place order and initiate payment
-router.post("/placeorder", async (req, res) => {
+router.post("/placeorder", authenticateToken, async (req, res) => {
     const { currentUser, cartItems, subtotal, deliveryAddress } = req.body;
     // console.log(currentUser);
     // console.log(cartItems);
@@ -149,7 +150,7 @@ router.post("/status", async (req, res) => {
 });
 
 // Get user orders
-router.post("/getuserorders", async (req, res) => {
+router.post("/getuserorders", authenticateToken, async (req, res) => {
     const { userid } = req.body;
 
     try {
@@ -161,7 +162,7 @@ router.post("/getuserorders", async (req, res) => {
 });
 
 // Route for delivery status (admin functionality)
-router.post("/deliverorder", async (req, res) => {
+router.post("/deliverorder", authenticateToken, async (req, res) => {
     const { orderid, status } = req.body;   // receive both orderid and status
 
     try {
@@ -182,7 +183,7 @@ router.post("/deliverorder", async (req, res) => {
 });
 
 // Get all orders (admin functionality)
-router.get("/getallorders", async (req, res) => {
+router.get("/getallorders", authenticateToken, async (req, res) => {
     try {
         const orders = await Order.find({});
         res.send(orders);
