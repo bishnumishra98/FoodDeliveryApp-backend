@@ -66,6 +66,7 @@ router.post("/login", loginLimiter, async (req, res) => {
             const currentUser = {
                 name: user.name,
                 email: user.email,
+                isAdmin: user.isAdmin,
                 _id: user._id,
             };
             res.send(currentUser);   // send user data as response
