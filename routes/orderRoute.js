@@ -36,8 +36,8 @@ router.post("/placeorder", authenticateToken, async (req, res) => {
 
         for (const item of cartItems) {
             const product = await Food.findById(item._id);
-            console.log("item:", item);
-            console.log("product:", product);
+            // console.log("item:", item);
+            // console.log("product:", product);
             
             if (!product) {
                 return res.status(400).json({ message: `Product with ID ${item._id} not found` });
