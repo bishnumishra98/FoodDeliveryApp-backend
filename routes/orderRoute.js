@@ -6,6 +6,8 @@ const { v4: uuidv4 } = require('uuid');
 const Order = require("../models/orderModel");
 const FailedOrder = require("../models/failedorderModel");
 const authenticateToken = require("../middlewares/auth");
+const Food = require("../models/foodModel");
+const { log } = require("console");
 
 // Load environment variables
 const PHONEPE_MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID;
@@ -29,6 +31,26 @@ router.post("/placeorder", authenticateToken, async (req, res) => {
     // console.log(deliveryAddress);
 
     try {
+        // Verify the subtotal by recalculating it from the database.
+        let recalculatedSubtotal = 0;
+
+        for (const item of cartItems) {
+            const product = await Food.findById(item._id);
+            console.log("item:", item);
+            console.log("product:", product);
+            
+            if (!product) {
+                return res.status(400).json({ message: `Product with ID ${item._id} not found` });
+            }
+            recalculatedSubtotal += product.price * item.quantity;   // calculate price * quantity
+        }
+
+        if (recalculatedSubtotal !== subtotal) {
+            return res.status(400).json({ message: "Subtotal mismatch! Please refresh your cart." });
+        } else {
+            console.log("Subtotal verified successfully");
+        }
+
         // Step 1: Prepare payload for PhonePe.
         const payload = {
             merchantId: PHONEPE_MERCHANT_ID,   // unique ID of the merchant
