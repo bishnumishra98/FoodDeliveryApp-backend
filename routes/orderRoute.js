@@ -112,8 +112,8 @@ router.post("/status", async (req, res) => {
         // Make request to PhonePe to check payment status
         const response = await axios.request(options);
 
-        // If payment is successful, save the 'failedorders' collection permanently into 'orders' collection,
-        // erase data the order from 'failedorders' collection, and finally redirect the user to orders page.
+        // If payment is successful, copy the document from 'failedorders' collection to 'orders' collection,
+        // erase the document from 'failedorders' collection, and finally redirect the user to orders page.
         if (response.data.success) {
             const temp = await FailedOrder.findOne({ transactionId: merchantTransactionId });
             // console.log("temp:", temp);
