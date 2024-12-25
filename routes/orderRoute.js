@@ -7,7 +7,6 @@ const Order = require("../models/orderModel");
 const FailedOrder = require("../models/failedorderModel");
 const authenticateToken = require("../middlewares/auth");
 const Food = require("../models/foodModel");
-const { log } = require("console");
 
 // Load environment variables
 const PHONEPE_MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID;
