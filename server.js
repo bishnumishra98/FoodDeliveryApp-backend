@@ -64,7 +64,7 @@ io.on("connection", (socket) => {
 	
 			// Update the order without manually converting ObjectId
 			const updatedOrder = await Order.findByIdAndUpdate(
-				orderId, // Pass string ID directly
+				orderId,   // pass string ID directly
 				{ deliveryStatus: newStatus },
 				{ new: true }
 			);
